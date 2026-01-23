@@ -8,63 +8,59 @@ function Provider({ children }) {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    // ✅ CRITICAL GUARD
+    // ✅ HARD GUARD (this fixes your crash)
     if (!supabase) {
-      console.warn("Supabase not initialized (env missing)");
+      console.warn("Supabase client not initialized yet");
       return;
     }
 
     const initializeUser = async () => {
       try {
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+        const { data: { session }, error } =
+          await supabase.auth.getSession();
 
-        if (sessionError) {
-          console.error("Session error:", sessionError);
+        if (error) {
+          console.error("Session error:", error);
           return;
         }
 
-        if (!session) {
-          console.log("No active session");
-          return;
-        }
+        if (!session) return;
 
         const currentUser = session.user;
 
-        const { data: existingUsers, error: selectError } = await supabase
-          .from("Users")
-          .select("*")
-          .eq("id", currentUser.id);
+        const { data: existingUsers, error: selectError } =
+          await supabase
+            .from("Users")
+            .select("*")
+            .eq("id", currentUser.id)
+            .single();
 
-        if (selectError) {
-          console.error("Select error:", selectError);
+        if (selectError && selectError.code !== "PGRST116") {
+          console.error(selectError);
           return;
         }
 
-        if (!existingUsers || existingUsers.length === 0) {
-          const { data: insertedUser, error: insertError } = await supabase
-            .from("Users")
-            .insert([
-              {
+        if (!existingUsers) {
+          const { data: insertedUser, error: insertError } =
+            await supabase
+              .from("Users")
+              .insert({
                 id: currentUser.id,
                 name: currentUser.user_metadata?.name || "",
                 email: currentUser.email,
                 picture: currentUser.user_metadata?.picture || "",
-              },
-            ])
-            .select()
-            .single();
+              })
+              .select()
+              .single();
 
           if (insertError) {
-            console.error("Insert error:", insertError);
+            console.error(insertError);
             return;
           }
 
           setUser(insertedUser);
         } else {
-          setUser(existingUsers[0]);
+          setUser(existingUsers);
         }
       } catch (err) {
         console.error("Unexpected error:", err);
