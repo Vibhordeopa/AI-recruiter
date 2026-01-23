@@ -17,13 +17,18 @@ export default function InterviewCompleted() {
         .select("*")
         .eq("interview_id", interview_id)
         .single();
+if (error) {
+  console.error("Supabase error:", error);
+  return;
+}
 
-      if (error) {
-        console.error("Error fetching feedback:", error);
-        return;
-      }
+if (!data) {
+  console.log("No feedback found yet");
+  return;
+}
 
-      setFeedback(data.feedback);
+setFeedback(data.feedback ?? data);
+
     };
 
     fetchFeedback();
