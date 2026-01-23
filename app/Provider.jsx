@@ -6,69 +6,31 @@ import React, { useContext, useEffect, useState } from "react";
 
 function Provider({ children }) {
   const [user, setUser] = useState(null);
+useEffect(() => {
+  if (!supabase) {
+    console.error("Supabase not initialized");
+    return;
+  }
 
-  useEffect(() => {
-    // ✅ HARD GUARD (this fixes your crash)
-    if (!supabase) {
-      console.warn("Supabase client not initialized yet");
+  const initializeUser = async () => {
+    const { data: { session }, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.error("Session error:", error);
       return;
     }
 
-    const initializeUser = async () => {
-      try {
-        const { data: { session }, error } =
-          await supabase.auth.getSession();
+    if (!session) {
+      console.log("No active session");
+      return;
+    }
 
-        if (error) {
-          console.error("Session error:", error);
-          return;
-        }
+    const currentUser = session.user;
+    setUser(currentUser);
+  };
 
-        if (!session) return;
-
-        const currentUser = session.user;
-
-        const { data: existingUsers, error: selectError } =
-          await supabase
-            .from("Users")
-            .select("*")
-            .eq("id", currentUser.id)
-            .single();
-
-        if (selectError && selectError.code !== "PGRST116") {
-          console.error(selectError);
-          return;
-        }
-
-        if (!existingUsers) {
-          const { data: insertedUser, error: insertError } =
-            await supabase
-              .from("Users")
-              .insert({
-                id: currentUser.id,
-                name: currentUser.user_metadata?.name || "",
-                email: currentUser.email,
-                picture: currentUser.user_metadata?.picture || "",
-              })
-              .select()
-              .single();
-
-          if (insertError) {
-            console.error(insertError);
-            return;
-          }
-
-          setUser(insertedUser);
-        } else {
-          setUser(existingUsers);
-        }
-      } catch (err) {
-        console.error("Unexpected error:", err);
-      }
-    };
-
-    initializeUser();
-  }, []);
+  initializeUser();
+}, []);
 
   return (
     <UserDetailContext.Provider value={{ user, setUser }}>
