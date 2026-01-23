@@ -2,7 +2,8 @@
 import Image from 'next/image'
 import { Button } from "@/components/ui/button"
 import React from 'react'
-import { supabase } from '@/services/supabaseClient'
+import { getSupabaseClient } from "@/services/supabaseClient";
+
 import { HandHeart } from 'lucide-react'
 
 
@@ -10,18 +11,25 @@ function Login () {
 
   // Here We used To sign in with google ..
 
-  const signInWithGoogle = async ()  => {
-    const { data, error } = await supabase.auth.signInWithOAuth({
+  const signInWithGoogle = async () => {
+  const supabase = getSupabaseClient();
+  if (!supabase) {
+    console.error("Supabase client not available");
+    return;
+  }
+
+  const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_BASE_URL}/dashboard`
-    }
+      redirectTo: window.location.origin + "/dashboard",
+    },
   });
-    
-    if(error){
-      console.error("Error : ", error.message)
-    }
+
+  if (error) {
+    console.error("OAuth error:", error.message);
   }
+};
+
 
   return (
     <div className = 'flex flex-col justify-center items-center h-screen'>
