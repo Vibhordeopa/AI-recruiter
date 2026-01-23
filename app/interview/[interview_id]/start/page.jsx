@@ -1,4 +1,5 @@
 "use client";
+export const dynamic = "force-dynamic";
 
 import { InterviewDataContext } from "@/context/InterviewDataContext";
 import { Mic, Phone, Timer } from "lucide-react";
