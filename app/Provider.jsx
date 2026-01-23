@@ -1,16 +1,14 @@
 "use client";
 
 import { UserDetailContext } from "@/context/UserDetailContext";
-import { supabase } from "@/services/supabaseClient";
+import { getSupabaseClient } from "@/services/supabaseClient";
+
 import React, { useContext, useEffect, useState } from "react";
 
 function Provider({ children }) {
   const [user, setUser] = useState(null);
 useEffect(() => {
-  if (!supabase) {
-    console.error("Supabase not initialized");
-    return;
-  }
+  if (!supabase) return;
 
   const initializeUser = async () => {
     const { data: { session }, error } = await supabase.auth.getSession();
